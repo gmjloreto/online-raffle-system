@@ -88,11 +88,16 @@ async function initIndex() {
     const selectedCountEl = document.getElementById('selected-count');
     const selectedTotalEl = document.getElementById('selected-total');
 
+    const loadMoreContainer = document.getElementById('load-more-container');
+    const btnLoadMore = document.getElementById('btn-load-more');
+
     let occupiedNumbers = [];
     let selectedNumbers = [];
     const PRICE_SINGLE = 5.00;
     const PRICE_BUNDLE_3 = 12.00;
     const TOTAL_SYSTEM_NUMBERS = 1000;
+    const NUMBERS_PER_PAGE = 200;
+    let visibleNumbersCount = NUMBERS_PER_PAGE;
 
     function calculateTotal(count) {
         const bundlesOf3 = Math.floor(count / 3);
@@ -136,12 +141,16 @@ async function initIndex() {
     function renderGrid() {
         grid.innerHTML = '';
         const filterVal = searchInput.value.trim();
+        let renderedCount = 0;
 
         for (let i = 1; i <= TOTAL_SYSTEM_NUMBERS; i++) {
             const paddedNumber = String(i).padStart(3, '0');
             
             // Filtra pelo número formatado (ex: permite buscar "005")
             if (filterVal && !paddedNumber.includes(filterVal)) continue;
+
+            // Se não houver busca, respeita o limite de carregamento
+            if (!filterVal && renderedCount >= visibleNumbersCount) break;
 
             const occupied = occupiedNumbers.find(n => n.number === i);
             const isSelected = selectedNumbers.includes(i);
@@ -159,7 +168,22 @@ async function initIndex() {
                 card.onclick = () => toggleNumberSelection(i);
             }
             grid.appendChild(card);
+            renderedCount++;
         }
+
+        // Mostrar/Esconder botão "Ver mais"
+        if (!filterVal && visibleNumbersCount < TOTAL_SYSTEM_NUMBERS) {
+            loadMoreContainer.classList.remove('hidden');
+        } else {
+            loadMoreContainer.classList.add('hidden');
+        }
+    }
+
+    if (btnLoadMore) {
+        btnLoadMore.onclick = () => {
+            visibleNumbersCount += NUMBERS_PER_PAGE;
+            renderGrid();
+        };
     }
 
     function toggleNumberSelection(number) {
@@ -530,7 +554,20 @@ async function initAdmin() {
                     <p style="font-size: 0.875rem; color: var(--gray-500);">📱 ${res.customer_phone} | 👤 Indicação: ${res.indication || '-'}</p>
                     <p style="font-size: 0.875rem; color: var(--success); font-weight: 700; margin-top: 0.5rem;">Valor: R$ ${parseFloat(res.total_amount).toFixed(2).replace('.', ',')}</p>
                 </div>
+                <div class="admin-actions">
+                    <button class="btn btn-outline btn-sm btn-cancel-paid" style="color: var(--error); border-color: var(--error); padding: 0.4rem; font-size: 0.75rem;">Cancelar Confirmação</button>
+                </div>
             `;
+
+            el.querySelector('.btn-cancel-paid').onclick = () => {
+                askConfirmation({
+                    title: 'Anular Confirmação?',
+                    message: `Deseja cancelar a reserva de ${res.customer_name}? Os números ${numbers} voltarão a ficar disponíveis.`,
+                    icon: '🚫',
+                    onConfirm: () => cancelReservation(res.id)
+                });
+            };
+
             paidList.appendChild(el);
         });
     }
