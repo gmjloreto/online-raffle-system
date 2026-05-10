@@ -139,17 +139,17 @@ async function initIndex() {
     }
 
     function renderGrid() {
-        grid.innerHTML = '';
         const filterVal = searchInput.value.trim();
+        const fragment = document.createDocumentFragment();
         let renderedCount = 0;
 
         for (let i = 1; i <= TOTAL_SYSTEM_NUMBERS; i++) {
             const paddedNumber = String(i).padStart(3, '0');
             
-            // Filtra pelo número formatado (ex: permite buscar "005")
+            // Se estiver buscando, filtra
             if (filterVal && !paddedNumber.includes(filterVal)) continue;
 
-            // Se não houver busca, respeita o limite de carregamento
+            // Se NÃO estiver buscando, respeita o limite de carregamento (paginação)
             if (!filterVal && renderedCount >= visibleNumbersCount) break;
 
             const occupied = occupiedNumbers.find(n => n.number === i);
@@ -161,14 +161,21 @@ async function initIndex() {
 
             if (occupied && (occupied.status === 'pending' || occupied.status === 'paid')) {
                 card.classList.add(occupied.status);
-                card.onclick = () => showToast(`O número ${String(i).padStart(3, '0')} já está ocupado.`, 'info');
+                card.onclick = () => showToast(`O número ${paddedNumber} já está ocupado.`, 'info');
             } else {
                 card.classList.add('available');
                 if (isSelected) card.classList.add('selected');
                 card.onclick = () => toggleNumberSelection(i);
             }
-            grid.appendChild(card);
+            fragment.appendChild(card);
             renderedCount++;
+        }
+
+        grid.innerHTML = '';
+        if (renderedCount === 0) {
+            grid.innerHTML = '<div class="grid-full text-center p-3 text-muted">Nenhum número encontrado.</div>';
+        } else {
+            grid.appendChild(fragment);
         }
 
         // Mostrar/Esconder botão "Ver mais"
