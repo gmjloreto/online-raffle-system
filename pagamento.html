@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagamento - Rifa Online</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <div class="logo">RIFA<span>GMJ</span></div>
+            <div class="nav-links">
+                <a href="index.html">Início</a>
+                <a href="admin.html">Administração</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container section">
+        <div class="payment-card">
+            <header>
+                <h2 class="section-title mb-1">🎉 Reserva Confirmada!</h2>
+                <p>Seus números foram reservados:</p>
+                <div id="reserved-numbers-list" class="text-4xl font-800 text-accent mt-2 mb-2 ls-4">---</div>
+                <p>Total a pagar: <strong id="reserved-total-display" class="text-3xl text-success">R$ 0,00</strong></p>
+            </header>
+
+            <div class="payment-grid">
+                <!-- Coluna 1: QR Code e Ações -->
+                <div class="payment-qr-section">
+                    <p class="text-sm text-muted mb-1">Escaneie para pagar:</p>
+                    <div class="qr-placeholder">
+                        <img src="assets/qrcode.png" alt="QR Code PIX" class="pix-qr-image" onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=ExemploDePix';">
+                    </div>
+
+                    <p class="text-sm text-muted mb-05">Ou use o Copia e Cola:</p>
+                    <div id="pix-copy-paste" class="pix-code">
+                        (11) 95279 - 9311
+                    </div>
+                    <button id="btn-copy-pix" class="btn btn-secondary w-100">Copiar Código PIX</button>
+                </div>
+
+                <!-- Coluna 2: Instruções e Próximos Passos -->
+                <div class="payment-instructions-section">
+                    <p class="mb-2">Realize o pagamento em até 30 minutos para garantir sua reserva.</p>
+                    
+                    <div class="pix-instructions-box mb-2">
+                        <p>Próximos passos:</p>
+                        <ol>
+                            <li>Abra o app do seu banco.</li>
+                            <li>Pague via PIX usando os dados ao lado.</li>
+                            <li>Envie o comprovante para nosso WhatsApp.</li>
+                            <li>Aguarde a confirmação pelo administrador.</li>
+                        </ol>
+                    </div>
+
+                    <a href="index.html" class="btn btn-primary w-100">Voltar ao Início</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+
+    <div id="toast-container"></div>
+
+    <script type="module">
+        import { supabaseUrl, supabaseKey } from './config/config.js';
+        console.log("Supabase Config Loaded:", supabaseUrl ? "URL OK" : "URL MISSING");
+    </script>
+    <script type="module" src="js/script.js"></script>
+</body>
+</html>

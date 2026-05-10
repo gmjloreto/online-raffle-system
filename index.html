@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rifa Online - Participe e Ganhe!</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <div class="logo">RIFA<span>GMJ</span></div>
+            <div class="nav-links">
+                <a href="index.html" class="active">Início</a>
+                <a href="admin.html">Administração</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container section">
+        <header class="text-center mb-4">
+            <h1 class="section-title mx-auto">Rifa Beneficente</h1>
+            <p class="text-muted text-lg">Escolha seus números e boa sorte! <strong>1 por R$ 5,00 ou 3 por apenas R$ 12,00!</strong></p>
+        </header>
+
+        <section class="stats">
+            <div class="stat-item">
+                <span>Total de Números</span>
+                <span id="total-numbers" class="stat-value">1000</span>
+            </div>
+            <div class="stat-item">
+                <span>Disponíveis</span>
+                <span id="available-count" class="stat-value">---</span>
+            </div>
+            <div class="stat-item">
+                <span>Aguardando</span>
+                <span id="pending-count" class="stat-value">---</span>
+            </div>
+        </section>
+
+        <div class="search-container">
+            <input type="text" id="search-number" placeholder="Buscar número específico (ex: 045)...">
+        </div>
+
+        <div id="raffle-grid" class="raffle-grid">
+            <!-- Números gerados via JS -->
+            <div class="grid-full text-center p-3 text-muted">Carregando números...</div>
+        </div>
+    </main>
+
+    <!-- Barra de Seleção Multipla (Carrinho) -->
+    <div id="selection-bar" class="selection-bar">
+        <div class="selection-info">
+            <div class="selection-count">Selecionados: <span id="selected-count">0</span></div>
+            <div class="selection-total">Total: <span id="selected-total">R$ 0,00</span></div>
+        </div>
+        <button id="btn-open-reservation" class="btn btn-accent w-auto">Reservar Agora</button>
+    </div>
+
+    <!-- Modal 1: Dados do Comprador -->
+    <div id="reservation-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="font-800 mb-05">Dados da Reserva</h2>
+                <p class="text-muted mb-2">Preencha seus dados para continuar.</p>
+            </div>
+            <form id="reservation-form">
+                <div class="form-group">
+                    <label>Nome Completo</label>
+                    <input type="text" id="customer-name" required placeholder="Seu nome">
+                </div>
+                <div class="form-group">
+                    <label>WhatsApp</label>
+                    <input type="text" id="customer-phone" required placeholder="(00) 00000-0000">
+                </div>
+                <div class="form-group">
+                    <label>Indicação (Opcional)</label>
+                    <input type="text" id="indication" placeholder="Quem indicou?">
+                </div>
+                <div class="modal-footer flex gap-1 mt-2">
+                    <button type="button" class="btn btn-outline flex-1" id="close-modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary flex-1">Próximo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 2: Confirmação de Pedido -->
+    <div id="confirm-order-modal" class="modal">
+        <div class="modal-content modal-sm text-center">
+            <div class="text-4xl mb-1">📝</div>
+            <h2 class="font-800 mb-05">Confirmar Pedido?</h2>
+            <p class="text-muted">Confira os detalhes antes de finalizar:</p>
+            
+            <div id="order-summary" class="order-summary-box">
+                <!-- Preenchido via JS -->
+            </div>
+
+            <div class="modal-footer flex gap-1">
+                <button type="button" class="btn btn-outline flex-1" id="cancel-order-btn">Voltar</button>
+                <button type="button" class="btn btn-accent flex-1" id="final-confirm-btn">Finalizar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script type="module">
+        import { supabaseUrl, supabaseKey } from './config/config.js';
+        console.log("Supabase Config Loaded:", supabaseUrl ? "URL OK" : "URL MISSING");
+    </script>
+    <script type="module" src="js/script.js"></script>
+</body>
+</html>

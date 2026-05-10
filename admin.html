@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin - Rifa Online</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <div class="logo">RIFA<span>GMJ</span></div>
+            <div class="nav-links">
+                <a href="index.html">Início</a>
+                <a href="admin.html" class="active">Administração</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container section">
+        <!-- Login Section -->
+        <section id="admin-login-section" class="admin-login">
+            <header class="text-center mb-3">
+                <h2 class="section-title mx-auto">Acesso Restrito</h2>
+                <p class="text-muted">Faça login para gerenciar as rifas.</p>
+            </header>
+            <div class="form-card mx-auto modal-sm">
+                <form id="login-form">
+                    <div class="form-group">
+                        <label>E-mail Corporativo</label>
+                        <input type="email" id="admin-email" required placeholder="admin@rifapremium.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Senha de Acesso</label>
+                        <input type="password" id="admin-password" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Entrar no Painel</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Dashboard Section -->
+        <section id="admin-dashboard-section" class="hidden">
+            <header class="admin-header">
+                <div>
+                    <h2 class="section-title">Dashboard</h2>
+                    <p>Conectado como: <strong id="admin-user-email"></strong></p>
+                </div>
+                <button id="btn-logout" class="btn btn-outline w-auto">Sair do Sistema</button>
+            </header>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <span>Aguardando Pagamento</span>
+                    <span id="admin-pending-count" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Confirmados</span>
+                    <span id="admin-paid-count" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Total Arrecadado</span>
+                    <span id="admin-total-revenue" class="stat-value text-success">R$ 0,00</span>
+                </div>
+            </div>
+
+            <!-- Revenue Chart -->
+            <div class="form-card mt-3 p-2">
+                <h3 class="font-800 mb-15">Análise de Arrecadação</h3>
+                <div class="chart-container">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+
+            <div class="admin-content mt-4">
+                <h3 class="font-800 mb-25 section-header-accent">Reservas Pendentes</h3>
+                <div id="pending-reservations-list" class="admin-list">
+                    <!-- Gerado via JS -->
+                </div>
+            </div>
+
+            <div class="admin-content mt-5">
+                <h3 class="font-800 mb-25 section-header-success">Histórico de Pagos</h3>
+                <div id="paid-reservations-list" class="admin-list">
+                    <!-- Gerado via JS -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal de Confirmação de Ação -->
+    <div id="action-modal" class="modal">
+        <div class="modal-content modal-sm text-center">
+            <div id="action-modal-icon" class="text-4xl mb-1">ℹ️</div>
+            <h2 id="action-modal-title" class="font-800 mb-05">Confirmar?</h2>
+            <p id="action-modal-message" class="text-muted mb-2"></p>
+            <div class="modal-footer flex gap-1">
+                <button type="button" class="btn btn-outline flex-1" id="action-cancel-btn">Cancelar</button>
+                <button type="button" class="btn btn-primary flex-1" id="action-confirm-btn">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script type="module">
+        import { supabaseUrl, supabaseKey } from './config/config.js';
+        console.log("Supabase Config Loaded:", supabaseUrl ? "URL OK" : "URL MISSING");
+    </script>
+    <script type="module" src="js/script.js"></script>
+</body>
+</html>
