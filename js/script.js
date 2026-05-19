@@ -96,7 +96,7 @@ async function initIndex() {
     const PRICE_SINGLE = 5.00;
     const PRICE_BUNDLE_3 = 12.00;
     const TOTAL_SYSTEM_NUMBERS = 1000;
-    const NUMBERS_PER_PAGE = 200;
+    const NUMBERS_PER_PAGE = 100;
     let visibleNumbersCount = NUMBERS_PER_PAGE;
 
     function calculateTotal(count) {
@@ -629,6 +629,12 @@ async function initAdmin() {
 
 // --- INICIALIZAÇÃO ---
 document.addEventListener('DOMContentLoaded', () => {
+    // Forçar scroll para o topo e desativar restauração automática do navegador
+    if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
+
     initIndex();
     initPayment();
     initAdmin();
