@@ -453,13 +453,44 @@ async function initAdmin() {
         if (!canvas) return;
 
         const dailyData = {};
+        const labels = [];
+        const values = [];
+
+        // 1. Determinar a data inicial (mínimo 7 dias atrás ou a data da primeira venda)
+        let startDate = new Date();
+        startDate.setDate(startDate.getDate() - 6);
+
         paidItems.forEach(item => {
-            const date = new Date(item.confirmed_at || item.updated_at).toLocaleDateString('pt-BR');
-            dailyData[date] = (dailyData[date] || 0) + parseFloat(item.total_amount);
+            const itemDate = new Date(item.confirmed_at || item.updated_at);
+            if (itemDate < startDate) startDate = itemDate;
         });
 
-        const labels = Object.keys(dailyData).reverse();
-        const values = Object.values(dailyData).reverse();
+        // Resetar para o início do dia para comparação consistente
+        startDate.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // 2. Preencher o mapa com zeros e criar labels ordenados
+        let current = new Date(startDate);
+        while (current <= today) {
+            const dateStr = current.toLocaleDateString('pt-BR');
+            dailyData[dateStr] = 0;
+            labels.push(dateStr);
+            current.setDate(current.getDate() + 1);
+        }
+
+        // 3. Somar os valores das vendas confirmadas
+        paidItems.forEach(item => {
+            const dateStr = new Date(item.confirmed_at || item.updated_at).toLocaleDateString('pt-BR');
+            if (dailyData[dateStr] !== undefined) {
+                dailyData[dateStr] += parseFloat(item.total_amount);
+            }
+        });
+
+        // 4. Gerar os valores na ordem das labels
+        labels.forEach(label => {
+            values.push(dailyData[label]);
+        });
 
         if (revenueChart) revenueChart.destroy();
         revenueChart = new Chart(canvas, {
