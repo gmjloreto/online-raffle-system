@@ -403,6 +403,7 @@ async function initAdmin() {
     const totalRevenueEl = document.getElementById('admin-total-revenue');
 
     let revenueChart = null;
+    let indicationsChart = null;
 
     function toggleAdminView(isLoggedIn) {
         if (isLoggedIn) {
@@ -454,6 +455,7 @@ async function initAdmin() {
 
         const pending = data.filter(r => r.status === 'pending');
         const paid = data.filter(r => r.status === 'paid');
+        const allActive = data.filter(r => r.status !== 'cancelled');
 
         const totalRevenue = paid.reduce((acc, curr) => acc + parseFloat(curr.total_amount), 0);
         if (pendingCountEl) pendingCountEl.textContent = pending.length;
@@ -463,6 +465,60 @@ async function initAdmin() {
         renderPendingList(pending);
         renderPaidList(paid);
         updateRevenueChart(paid);
+        updateIndicationsChart(allActive);
+    }
+
+    function updateIndicationsChart(reservations) {
+        const canvas = document.getElementById('indicationsChart');
+        if (!canvas) return;
+
+        const counts = {};
+        reservations.forEach(r => {
+            if (r.indication && r.indication.trim() !== "") {
+                const name = r.indication.trim();
+                counts[name] = (counts[name] || 0) + 1;
+            }
+        });
+
+        // Ordenar e pegar top 10
+        const sorted = Object.entries(counts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10);
+
+        const labels = sorted.map(i => i[0]);
+        const values = sorted.map(i => i[1]);
+
+        if (indicationsChart) indicationsChart.destroy();
+        indicationsChart = new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Indicações',
+                    data: values,
+                    backgroundColor: '#0a3ca7',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 },
+                        grid: { color: '#f4f4f5' }
+                    },
+                    y: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
     }
 
     function updateRevenueChart(paidItems) {
