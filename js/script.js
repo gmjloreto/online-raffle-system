@@ -118,7 +118,10 @@ async function initIndex() {
                 .from('raffle_selected_numbers')
                 .select(`
                     number,
-                    raffle_reservations ( status )
+                    raffle_reservations ( 
+                        status,
+                        customer_name
+                    )
                 `);
 
             if (error) throw error;
@@ -126,7 +129,8 @@ async function initIndex() {
             occupiedNumbers = data
                 .map(item => ({
                     number: item.number,
-                    status: item.raffle_reservations ? item.raffle_reservations.status : 'available'
+                    status: item.raffle_reservations ? item.raffle_reservations.status : 'available',
+                    customer_name: item.raffle_reservations ? item.raffle_reservations.customer_name : null
                 }))
                 .filter(n => n.status !== 'cancelled');
 
@@ -157,10 +161,23 @@ async function initIndex() {
             
             const card = document.createElement('div');
             card.className = 'number-card';
-            card.textContent = paddedNumber;
+            
+            const numSpan = document.createElement('span');
+            numSpan.textContent = paddedNumber;
+            card.appendChild(numSpan);
 
             if (occupied && (occupied.status === 'pending' || occupied.status === 'paid')) {
                 card.classList.add(occupied.status);
+
+                // Adicionar nome do comprador se estiver pago
+                if (occupied.status === 'paid' && occupied.customer_name) {
+                    const firstName = occupied.customer_name.split(' ')[0];
+                    const nameEl = document.createElement('span');
+                    nameEl.className = 'buyer-name';
+                    nameEl.textContent = firstName;
+                    card.appendChild(nameEl);
+                }
+
                 card.onclick = () => showToast(`O número ${paddedNumber} já está ocupado.`, 'info');
             } else {
                 card.classList.add('available');

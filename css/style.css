@@ -593,6 +593,7 @@ input:focus {
 .number-card {
     aspect-ratio: 1;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-md);
@@ -602,6 +603,19 @@ input:focus {
     font-weight: 700;
     transition: var(--transition);
     will-change: transform;
+    gap: 2px;
+}
+
+.buyer-name {
+    font-size: 0.65rem;
+    font-weight: 500;
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1;
+    margin-top: 1px;
+    opacity: 0.9;
 }
 
 .number-card.available {
