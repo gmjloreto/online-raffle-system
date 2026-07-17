@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rifa Online - Participe e Ganhe!</title>
-    
+
     <!-- SEO & Open Graph -->
     <meta name="description" content="Participe da nossa rifa beneficente! Garanta sua chance de ganhar com apenas R$ 5,00.">
     <meta property="og:title" content="Rifa Online - Participe e Ganhe!">
@@ -19,7 +19,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
+
     <link rel="icon" href="assets/favicon_32px.ico" sizes="32x32">
     <link rel="icon" href="assets/favicon_48px.ico" sizes="48x48">
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" sizes="180x180">
@@ -63,6 +63,18 @@
             </div>
         </header>
 
+        <!-- Raffle Closed Banner (hidden by default) -->
+        <div id="raffle-closed-section" class="hidden">
+            <div class="closed-banner">
+                <div class="closed-banner-icon">🏆</div>
+                <h2 class="closed-banner-title">Rifa Encerrada</h2>
+                <p class="closed-banner-text">Obrigado a todos que participaram. Confira os vencedores abaixo.</p>
+            </div>
+            <div id="winners-list" class="winners-grid">
+                <!-- Gerado via JS -->
+            </div>
+        </div>
+
         <section class="stats">
             <div class="stat-item">
                 <span>Total de Números</span>
@@ -90,7 +102,7 @@
         <div id="load-more-container" class="text-center mt-2 mb-4 hidden">
             <button id="btn-load-more" class="btn btn-outline w-auto" style="padding: 0.8rem 2rem;">Ver mais números</button>
         </div>
-        <section class="contact-support mt-5 mb-5 text-center">
+        <section class="contact-suppps aux --sort=-%mem | head -20ort mt-5 mb-5 text-center">
             <h2 class="font-800 mb-1">Dúvidas ou Suporte?</h2>
             <p class="text-muted mb-2">Se precisar de ajuda com sua reserva ou tiver qualquer dúvida, entre em contato conosco:</p>
             <a href="https://api.whatsapp.com/send?phone=5511952799311&text=Ol%C3%A1%2C%20vim%20do%20site%20das%20rifas%20e%20tenho%20uma%20pergunta..." target="_blank" class="btn btn-outline w-auto mb-4" style="border-color: #25D366; color: #128C7E;">
@@ -142,7 +154,7 @@
             <div class="text-4xl mb-1">📝</div>
             <h2 class="font-800 mb-05">Confirmar Pedido?</h2>
             <p class="text-muted">Confira os detalhes antes de finalizar:</p>
-            
+
             <div id="order-summary" class="order-summary-box">
                 <!-- Preenchido via JS -->
             </div>

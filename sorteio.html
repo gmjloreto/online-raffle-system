@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorteio - Rifa Online</title>
+
+    <meta name="description" content="Painel de sorteio para a rifa online. Realize simulações e o sorteio oficial.">
+    <meta property="og:title" content="Sorteio - Rifa Online">
+    <meta property="og:description" content="Painel de sorteio oficial da rifa.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://rifa.gmjloreto.com.br/assets/og-admin.png">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/sorteio.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1"></script>
+
+    <link rel="icon" href="assets/favicon_32px.ico" sizes="32x32">
+    <link rel="icon" href="assets/favicon_48px.ico" sizes="48x48">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" sizes="180x180">
+    <link rel="icon" href="assets/favicon_512px.ico" sizes="512x512">
+</head>
+<body class="admin-dashboard">
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="index.html" class="logo">
+                <img src="assets/icon.webp" alt="Logo GMJ" class="nav-logo-img">
+            </a>
+            <div class="nav-links">
+                <a href="index.html">Início</a>
+                <a href="admin.html">Admin</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container section">
+        <!-- Login Section -->
+        <section id="sorteio-login-section" class="admin-login">
+            <header class="text-center mb-3">
+                <h2 class="section-title mx-auto">Acesso Restrito</h2>
+                <p class="text-muted">Faça login para acessar o painel de sorteio.</p>
+            </header>
+            <div class="form-card mx-auto modal-sm">
+                <form id="sorteio-login-form">
+                    <div class="form-group">
+                        <label>E-mail Corporativo</label>
+                        <input type="email" id="sorteio-email" required placeholder="admin@rifapremium.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Senha de Acesso</label>
+                        <input type="password" id="sorteio-password" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Entrar no Painel</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Dashboard Section -->
+        <section id="sorteio-dashboard-section" class="hidden">
+            <header class="admin-header">
+                <div>
+                    <h2 class="section-title">Painel de Sorteio</h2>
+                    <p>Conectado como: <strong id="sorteio-user-email"></strong></p>
+                </div>
+                <button id="btn-sorteio-logout" class="btn btn-outline w-auto">Sair do Sistema</button>
+            </header>
+
+            <!-- Dev Mode Warning -->
+            <div id="dev-mode-warning" class="dev-warning hidden">
+                <span class="dev-warning-icon">⚠️</span>
+                <div class="dev-warning-text">
+                    <strong>MODO DESENVOLVIMENTO</strong>
+                    <p>Os sorteios podem ser revertidos.</p>
+                </div>
+                <button id="btn-reset-raffle" class="btn btn-outline w-auto">🗑 Resetar Sorteio</button>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats">
+                <div class="stat-item">
+                    <span>Participantes</span>
+                    <span id="total-participants" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Números Pagos</span>
+                    <span id="total-paid-numbers" class="stat-value">0</span>
+                </div>
+            </div>
+
+            <!-- Sorteio Cards -->
+            <div class="sorteio-cards">
+                <!-- Card 1: Simulação -->
+                <div class="form-card sorteio-card">
+                    <h3 class="font-800 mb-1">🎲 Simulação</h3>
+                    <p class="text-muted mb-2">Gere uma simulação sem gravar no banco. Pode ser executada infinitas vezes.</p>
+                    <div id="simulation-results" class="simulation-results hidden">
+                        <!-- Gerado via JS -->
+                    </div>
+                    <button id="btn-simulate" class="btn btn-accent w-auto">Gerar Simulação</button>
+                    <button id="btn-simulate-again" class="btn btn-outline w-auto hidden">Sortear novamente</button>
+                </div>
+
+                <!-- Card 2: Sorteio Oficial -->
+                <div class="form-card sorteio-card">
+                    <h3 class="font-800 mb-1">🏆 Sorteio Oficial</h3>
+                    <p class="text-muted mb-2">Realize o sorteio oficial. Os resultados serão gravados e a rifa será encerrada.</p>
+                    <div id="official-winners-display" class="official-winners-display hidden">
+                        <!-- Gerado via JS -->
+                    </div>
+                    <button id="btn-official-draw" class="btn btn-danger w-auto">Realizar Sorteio Oficial</button>
+                </div>
+            </div>
+
+            <!-- History -->
+            <div id="history-section" class="mt-5">
+                <h3 class="font-800 mb-2 section-header-accent">Histórico de Sorteios</h3>
+                <div id="winners-history" class="winners-history">
+                    <p class="text-muted">Carregando histórico...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Official Draw Confirmation Modal -->
+    <div id="official-draw-modal" class="modal">
+        <div class="modal-content modal-sm text-center">
+            <div class="text-4xl mb-1">🏆</div>
+            <h2 class="font-800 mb-05">Confirmar Sorteio Oficial</h2>
+            <div class="text-left" style="font-size: var(--text-sm); line-height: 1.6;">
+                <p class="mb-1">Você está prestes a realizar o sorteio oficial.</p>
+                <p class="mb-1">Após confirmar:</p>
+                <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+                    <li>A rifa será encerrada</li>
+                    <li>Nenhum novo número poderá ser comprado</li>
+                    <li>Os vencedores serão publicados</li>
+                    <li>O resultado ficará disponível no site</li>
+                </ul>
+                <p class="font-800 text-center">Deseja continuar?</p>
+            </div>
+            <div class="modal-footer flex gap-1">
+                <button type="button" class="btn btn-outline flex-1" id="btn-cancel-official">Cancelar</button>
+                <button type="button" class="btn btn-primary flex-1" id="btn-confirm-official" style="background: var(--error);">Confirmar Sorteio</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic Action Modal -->
+    <div id="action-modal" class="modal">
+        <div class="modal-content modal-sm text-center">
+            <div id="action-modal-icon" class="text-4xl mb-1">ℹ️</div>
+            <h2 id="action-modal-title" class="font-800 mb-05">Confirmar?</h2>
+            <p id="action-modal-message" class="text-muted mb-2"></p>
+            <div class="modal-footer flex gap-1">
+                <button type="button" class="btn btn-outline flex-1" id="action-cancel-btn">Cancelar</button>
+                <button type="button" class="btn btn-primary flex-1" id="action-confirm-btn">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script type="module">
+        import { supabaseUrl, supabaseKey } from './config/config.js';
+        console.log("Supabase Config Loaded:", supabaseUrl ? "URL OK" : "URL MISSING");
+    </script>
+    <script type="module" src="js/sorteio.js"></script>
+</body>
+</html>
