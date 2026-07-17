@@ -179,10 +179,13 @@ async function initIndex() {
                 }
 
                 card.onclick = () => showToast(`O número ${paddedNumber} já está ocupado.`, 'info');
-            } else {
+            } else if (!raffleClosed) {
                 card.classList.add('available');
                 if (isSelected) card.classList.add('selected');
                 card.onclick = () => toggleNumberSelection(i);
+            } else {
+                card.classList.add('available');
+                card.classList.add('blocked');
             }
             fragment.appendChild(card);
             renderedCount++;
@@ -237,6 +240,89 @@ async function initIndex() {
         const paid = occupiedNumbers.filter(n => n.status === 'paid').length;
         if (availableCountEl) availableCountEl.textContent = TOTAL_SYSTEM_NUMBERS - (pending + paid);
         if (pendingCountEl) pendingCountEl.textContent = pending;
+    }
+
+    // --- RAFFLE CLOSED STATE ---
+    let raffleClosed = false;
+
+    async function checkRaffleClosed() {
+        try {
+            const { data, error } = await supabase
+                .from('raffle_settings')
+                .select('raffle_closed')
+                .single();
+            if (!error && data?.raffle_closed) {
+                raffleClosed = true;
+                showRaffleClosedUI();
+                return true;
+            }
+        } catch (e) {}
+        return false;
+    }
+
+    async function showRaffleClosedUI() {
+        const closedSection = document.getElementById('raffle-closed-section');
+        if (closedSection) closedSection.classList.remove('hidden');
+
+        // Hide selection bar
+        if (selectionBar) selectionBar.classList.remove('active');
+
+        // Hide load more
+        if (loadMoreContainer) loadMoreContainer.classList.add('hidden');
+
+        await fetchAndDisplayWinners();
+    }
+
+    async function fetchAndDisplayWinners() {
+        const list = document.getElementById('winners-list');
+        if (!list) return;
+
+        try {
+            const { data, error } = await supabase
+                .from('raffle_winners')
+                .select('*')
+                .order('position', { ascending: true });
+
+            if (error) throw error;
+
+            if (!data || data.length === 0) {
+                list.innerHTML = '<p class="text-muted text-center p-3">Nenhum vencedor registrado.</p>';
+                return;
+            }
+
+            list.innerHTML = '';
+            data.forEach(w => {
+                const card = document.createElement('div');
+                card.className = 'winner-card';
+                const emoji = ['🥇', '🥈', '🥉', '🎁'][w.position - 1] || '🎫';
+                card.innerHTML = `
+                    <div class="winner-emoji">${emoji}</div>
+                    <div class="winner-info">
+                        <div class="winner-position">${w.position}\u00ba Pr\u00eamio</div>
+                        <div class="winner-number">${String(w.number).padStart(3, '0')}</div>
+                        <div class="winner-name">${shortenName(w.customer_name)}</div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        } catch (err) {
+            console.error('Erro ao carregar vencedores:', err);
+            if (list) list.innerHTML = '<p class="text-muted text-center p-3">Erro ao carregar vencedores.</p>';
+        }
+    }
+
+    function shortenName(fullName) {
+        if (!fullName) return '';
+        const parts = fullName.trim().split(/\s+/);
+        if (parts.length <= 2) return fullName.trim();
+        return parts[0] + ' ' + parts[parts.length - 1];
+    }
+
+    // Early check - if closed, skip interactive setup
+    const isClosed = await checkRaffleClosed();
+    if (isClosed) {
+        await fetchOccupiedNumbers();
+        return;
     }
 
     document.getElementById('btn-open-reservation').onclick = () => {
