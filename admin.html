@@ -74,18 +74,38 @@
                 <button id="btn-logout" class="btn btn-outline w-auto">Sair do Sistema</button>
             </header>
 
-            <div class="stats">
-                <div class="stat-item">
-                    <span>Aguardando Pagamento</span>
-                    <span id="admin-pending-count" class="stat-value">0</span>
+            <div class="admin-stats-layout">
+                <div class="stats">
+                    <div class="stat-item">
+                        <span>Aguardando Pagamento</span>
+                        <span id="admin-pending-count" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Confirmados</span>
+                        <span id="admin-paid-count" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Números Vendidos</span>
+                        <span id="admin-sold-numbers-count" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Disponíveis</span>
+                        <span id="admin-available-count" class="stat-value">0</span>
+                    </div>
                 </div>
-                <div class="stat-item">
-                    <span>Confirmados</span>
-                    <span id="admin-paid-count" class="stat-value">0</span>
-                </div>
-                <div class="stat-item">
+                <div class="stat-item admin-stats-total">
                     <span>Total Arrecadado</span>
                     <span id="admin-total-revenue" class="stat-value text-success">R$ 0,00</span>
+                </div>
+            </div>
+
+            <div class="form-card p-2 mt-3">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                    <h3 class="font-800" style="margin-bottom: 0;">Progresso da Rifa</h3>
+                    <span id="admin-progress-percent" class="font-800" style="color: var(--accent);">0%</span>
+                </div>
+                <div style="background: var(--gray-100); border-radius: 999px; height: 14px; overflow: hidden;">
+                    <div id="admin-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--success)); border-radius: 999px; transition: width .4s ease;"></div>
                 </div>
             </div>
 
@@ -103,6 +123,11 @@
                         <canvas id="indicationsChart"></canvas>
                     </div>
                 </div>
+            </div>
+
+            <div class="search-container mt-4" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                <input type="text" id="admin-search" style="flex: 1; min-width: 220px;" placeholder="Buscar por nome, telefone, indicação ou número...">
+                <button id="btn-export-csv" class="btn btn-outline w-auto" style="white-space: nowrap;">⬇️ Exportar CSV</button>
             </div>
 
             <div class="admin-content mt-4">
