@@ -78,6 +78,7 @@ async function initIndex() {
 
     const availableCountEl = document.getElementById('available-count');
     const pendingCountEl = document.getElementById('pending-count');
+    const paidCountEl = document.getElementById('paid-count');
     const reservationModal = document.getElementById('reservation-modal');
     const reservationForm = document.getElementById('reservation-form');
     const closeModalBtn = document.getElementById('close-modal');
@@ -242,6 +243,7 @@ async function initIndex() {
         const paid = occupiedNumbers.filter(n => n.status === 'paid').length;
         if (availableCountEl) availableCountEl.textContent = TOTAL_SYSTEM_NUMBERS - (pending + paid);
         if (pendingCountEl) pendingCountEl.textContent = pending;
+        if (paidCountEl) paidCountEl.textContent = paid;
     }
 
     // --- RAFFLE CLOSED STATE ---
@@ -334,6 +336,80 @@ async function initIndex() {
         }
         reservationModal.classList.add('active');
     };
+
+    // --- Alternância automático / manual ---
+    const autoSection = document.getElementById('auto-section');
+    const manualSection = document.getElementById('manual-section');
+    const btnToggleMode = document.getElementById('btn-toggle-mode');
+
+    if (btnToggleMode) {
+        btnToggleMode.onclick = () => {
+            const goingManual = autoSection.classList.contains('hidden');
+            autoSection.classList.toggle('hidden');
+            manualSection.classList.toggle('hidden');
+            btnToggleMode.textContent = goingManual ? 'Escolher Manualmente' : '↩ Voltar p/ Automático';
+        };
+    }
+
+    // --- Seleção automática (rife-me style) ---
+    const autoQtyInput = document.getElementById('auto-qty');
+    const qtyMinusBtn = document.getElementById('qty-minus');
+    const qtyPlusBtn = document.getElementById('qty-plus');
+    const btnAutoPay = document.getElementById('btn-auto-pay');
+
+    function getFreeNumbers() {
+        const occupied = new Set(
+            occupiedNumbers
+                .filter(n => n.status === 'pending' || n.status === 'paid')
+                .map(n => n.number)
+        );
+        const selected = new Set(selectedNumbers);
+        const free = [];
+        for (let i = 1; i <= TOTAL_SYSTEM_NUMBERS; i++) {
+            if (!occupied.has(i) && !selected.has(i)) free.push(i);
+        }
+        return free;
+    }
+
+    function pickRandom(count) {
+        const free = getFreeNumbers();
+        if (free.length === 0) {
+            showToast('Nenhum número livre disponível.', 'info');
+            return 0;
+        }
+        const take = Math.min(count, free.length);
+        for (let i = 0; i < take; i++) {
+            const j = i + Math.floor(Math.random() * (free.length - i));
+            [free[i], free[j]] = [free[j], free[i]];
+        }
+        free.slice(0, take).forEach(n => {
+            selectedNumbers.push(n);
+        });
+        updateSelectionUI();
+        renderGrid();
+        return take;
+    }
+
+    if (qtyMinusBtn) qtyMinusBtn.onclick = () => {
+        autoQtyInput.value = Math.max(1, (parseInt(autoQtyInput.value) || 1) - 1);
+    };
+    if (qtyPlusBtn) qtyPlusBtn.onclick = () => {
+        autoQtyInput.value = Math.min(TOTAL_SYSTEM_NUMBERS, (parseInt(autoQtyInput.value) || 1) + 1);
+    };
+    if (btnAutoPay) btnAutoPay.onclick = () => {
+        const qty = Math.max(1, parseInt(autoQtyInput.value) || 1);
+        const added = pickRandom(qty);
+        if (added > 0) {
+            showToast(`${added} número(s) adicionado(s).`, 'success');
+        }
+    };
+    document.querySelectorAll('.btn-auto-quick').forEach(btn => {
+        btn.onclick = () => {
+            const qty = parseInt(btn.dataset.qty) || 5;
+            const added = pickRandom(qty);
+            showToast(added > 0 ? `${added} número(s) adicionado(s).` : 'Nenhum número livre.', added > 0 ? 'success' : 'info');
+        };
+    });
 
     closeModalBtn.onclick = () => {
         reservationModal.classList.remove('active');
