@@ -329,6 +329,13 @@ async function initIndex() {
         return;
     }
 
+    const btnClearSelection = document.getElementById('btn-clear-selection');
+    if (btnClearSelection) btnClearSelection.onclick = () => {
+        selectedNumbers.length = 0;
+        updateSelectionUI();
+        renderGrid();
+    };
+
     document.getElementById('btn-open-reservation').onclick = () => {
         if (selectedNumbers.length === 0) {
             showToast('Selecione pelo menos um número.', 'info');
