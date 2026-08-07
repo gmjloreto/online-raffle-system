@@ -3,6 +3,9 @@ import { supabaseUrl, supabaseKey } from '../config/config.js';
 // Inicialização do Supabase
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+// Total de números da rifa (compartilhado entre index e admin)
+const TOTAL_SYSTEM_NUMBERS = 500;
+
 // --- UTILITÁRIOS GLOBAIS ---
 
 function showToast(message, type = 'info') {
@@ -95,7 +98,6 @@ async function initIndex() {
     let selectedNumbers = [];
     const PRICE_SINGLE = 5.00;
     const PRICE_BUNDLE_3 = 12.00;
-    const TOTAL_SYSTEM_NUMBERS = 1000;
     const NUMBERS_PER_PAGE = 100;
     let visibleNumbersCount = NUMBERS_PER_PAGE;
 
@@ -486,10 +488,17 @@ async function initAdmin() {
     const adminEmailEl = document.getElementById('admin-user-email');
     const pendingCountEl = document.getElementById('admin-pending-count');
     const paidCountEl = document.getElementById('admin-paid-count');
+    const soldNumbersCountEl = document.getElementById('admin-sold-numbers-count');
+    const availableCountEl = document.getElementById('admin-available-count');
     const totalRevenueEl = document.getElementById('admin-total-revenue');
+    const progressPercentEl = document.getElementById('admin-progress-percent');
+    const progressBarEl = document.getElementById('admin-progress-bar');
+    const adminSearchEl = document.getElementById('admin-search');
+    const exportBtn = document.getElementById('btn-export-csv');
 
     let revenueChart = null;
     let indicationsChart = null;
+    let allReservations = [];
 
     function toggleAdminView(isLoggedIn) {
         if (isLoggedIn) {
@@ -539,19 +548,82 @@ async function initAdmin() {
             return;
         }
 
+        allReservations = data;
+
         const pending = data.filter(r => r.status === 'pending');
         const paid = data.filter(r => r.status === 'paid');
         const allActive = data.filter(r => r.status !== 'cancelled');
 
         const totalRevenue = paid.reduce((acc, curr) => acc + parseFloat(curr.total_amount), 0);
+        const soldNumbers = paid.reduce((acc, curr) => acc + (curr.raffle_selected_numbers ? curr.raffle_selected_numbers.length : 0), 0);
+        const available = Math.max(0, TOTAL_SYSTEM_NUMBERS - soldNumbers);
+        const progress = Math.min(100, Math.round((soldNumbers / TOTAL_SYSTEM_NUMBERS) * 100));
+
         if (pendingCountEl) pendingCountEl.textContent = pending.length;
         if (paidCountEl) paidCountEl.textContent = paid.length;
+        if (soldNumbersCountEl) soldNumbersCountEl.textContent = soldNumbers;
+        if (availableCountEl) availableCountEl.textContent = available;
         if (totalRevenueEl) totalRevenueEl.textContent = `R$ ${totalRevenue.toFixed(2).replace('.', ',')}`;
+        if (progressPercentEl) progressPercentEl.textContent = `${progress}%`;
+        if (progressBarEl) progressBarEl.style.width = `${progress}%`;
 
-        renderPendingList(pending);
-        renderPaidList(paid);
+        renderLists();
         updateRevenueChart(paid);
         updateIndicationsChart(allActive);
+    }
+
+    function matchesQuery(res, q) {
+        if (!q) return true;
+        const haystack = [
+            res.customer_name,
+            res.customer_phone,
+            res.indication,
+            ...(res.raffle_selected_numbers || []).map(n => String(n.number).padStart(3, '0'))
+        ].join(' ').toLowerCase();
+        return haystack.includes(q);
+    }
+
+    function renderLists() {
+        const q = adminSearchEl.value.trim().toLowerCase();
+        const filtered = allReservations.filter(r => r.status !== 'cancelled' && matchesQuery(r, q));
+        renderPendingList(filtered.filter(r => r.status === 'pending'));
+        renderPaidList(filtered.filter(r => r.status === 'paid'));
+    }
+
+    function exportCSV() {
+        const paid = allReservations.filter(r => r.status === 'paid');
+        if (paid.length === 0) {
+            showToast('Nenhum pagamento para exportar.', 'info');
+            return;
+        }
+        const esc = (v) => {
+            const s = String(v ?? '');
+            return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+        };
+        const header = ['Nome', 'Telefone', 'Indicação', 'Números', 'Valor (R$)', 'Data'];
+        const rows = paid.map(res => {
+            const numbers = (res.raffle_selected_numbers || []).map(n => String(n.number).padStart(3, '0')).join('; ');
+            const date = new Date(res.confirmed_at || res.updated_at).toLocaleDateString('pt-BR');
+            return [
+                esc(res.customer_name),
+                esc(res.customer_phone),
+                esc(res.indication || ''),
+                esc(numbers),
+                parseFloat(res.total_amount).toFixed(2).replace('.', ','),
+                esc(date)
+            ].join(',');
+        });
+        const csv = [header.join(','), ...rows].join('\n');
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `rifa-pagos-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        showToast('CSV exportado!', 'success');
     }
 
     function updateIndicationsChart(reservations) {
@@ -735,38 +807,48 @@ async function initAdmin() {
         if (!paidList) return;
         paidList.innerHTML = '';
         if (items.length === 0) {
-            paidList.innerHTML = '<p style="color: var(--gray-400);">Nenhum pagamento confirmado.</p>';
+            paidList.innerHTML = '<p class="text-muted" style="padding: 1rem;">Nenhum pagamento confirmado.</p>';
             return;
         }
 
+        const wrap = document.createElement('div');
+        wrap.className = 'paid-table-wrap';
+
+        const table = document.createElement('table');
+        table.className = 'paid-table';
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Números</th>
+                    <th>Indicação</th>
+                    <th>Valor</th>
+                    <th>Data</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        `;
+        const tbody = table.querySelector('tbody');
+
         items.forEach(res => {
             const numbers = res.raffle_selected_numbers.map(n => String(n.number).padStart(3, '0')).join(', ');
-            const el = document.createElement('div');
-            el.className = 'admin-item';
-            el.style.borderLeft = '4px solid var(--success)';
-            el.innerHTML = `
-                <div class="admin-item-info">
-                    <h4 style="font-weight: 800; margin-bottom: 0.5rem;">${res.customer_name} <span class="tag-accent" style="background: var(--success); color: white; margin-left: 1rem;">PAGO</span></h4>
-                    <p style="font-size: 0.875rem; color: var(--accent); font-weight: 700;">Números: ${numbers}</p>
-                    <p style="font-size: 0.875rem; color: var(--gray-500);">📱 ${res.customer_phone} | 👤 Indicação: ${res.indication || '-'}</p>
-                    <p style="font-size: 0.875rem; color: var(--success); font-weight: 700; margin-top: 0.5rem;">Valor: R$ ${parseFloat(res.total_amount).toFixed(2).replace('.', ',')}</p>
-                </div>
-                <div class="admin-actions">
-                    <button class="btn btn-outline btn-sm btn-cancel-paid" style="color: var(--error); border-color: var(--error); padding: 0.4rem; font-size: 0.75rem;">Cancelar Confirmação</button>
-                </div>
+            const amount = parseFloat(res.total_amount).toFixed(2).replace('.', ',');
+            const date = new Date(res.confirmed_at || res.updated_at).toLocaleDateString('pt-BR');
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td data-label="Nome"><span class="paid-name">${res.customer_name}</span></td>
+                <td class="paid-numbers" data-label="Números">${numbers}</td>
+                <td data-label="Indicação">${res.indication || '-'}</td>
+                <td class="paid-amount" data-label="Valor">R$ ${amount}</td>
+                <td class="paid-date" data-label="Data">${date}</td>
             `;
 
-            el.querySelector('.btn-cancel-paid').onclick = () => {
-                askConfirmation({
-                    title: 'Anular Confirmação?',
-                    message: `Deseja cancelar a reserva de ${res.customer_name}? Os números ${numbers} voltarão a ficar disponíveis.`,
-                    icon: '🚫',
-                    onConfirm: () => cancelReservation(res.id)
-                });
-            };
-
-            paidList.appendChild(el);
+            tbody.appendChild(tr);
         });
+
+        wrap.appendChild(table);
+        paidList.appendChild(wrap);
     }
 
     async function confirmPayment(id) {
@@ -813,6 +895,9 @@ async function initAdmin() {
         await supabase.auth.signOut();
         window.location.reload();
     };
+
+    if (adminSearchEl) adminSearchEl.addEventListener('input', renderLists);
+    if (exportBtn) exportBtn.addEventListener('click', exportCSV);
 
     checkSession();
 }
