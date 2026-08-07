@@ -79,31 +79,66 @@
         </div>
 
         <section class="stats">
-            <div class="stat-item">
-                <span>Total de Números</span>
+            <div class="stat-item" style="background: var(--accent); color: var(--color-white);">
+                <span>Total</span>
                 <span id="total-numbers" class="stat-value">500</span>
             </div>
-            <div class="stat-item">
-                <span>Disponíveis</span>
+            <div class="stat-item" style="background: var(--color-gray-600); color: var(--color-white);">
+                <span>Livres</span>
                 <span id="available-count" class="stat-value">---</span>
             </div>
-            <div class="stat-item">
-                <span>Aguardando</span>
+            <div class="stat-item" style="background: var(--warning); color: var(--color-black);">
+                <span>Reserv.</span>
                 <span id="pending-count" class="stat-value">---</span>
+            </div>
+            <div class="stat-item" style="background: var(--success); color: var(--color-white);">
+                <span>Pagos</span>
+                <span id="paid-count" class="stat-value">---</span>
             </div>
         </section>
 
-        <div class="search-container">
-            <input type="text" id="search-number" placeholder="Buscar número específico (ex: 045)...">
+        <div class="form-card p-2 mt-4">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                <h3 class="font-800 mb-0">Escolha seus bilhetes</h3>
+                <button type="button" id="btn-toggle-mode" class="btn btn-outline w-auto" style="font-size: var(--text-sm);">Escolher Manualmente</button>
+            </div>
+
+            <div id="auto-section">
+                <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; justify-content: center; align-items: center; margin-top: 1rem;">
+                    <button type="button" class="btn btn-outline w-auto btn-auto-quick" data-qty="5">+ 5 BILHETES</button>
+                    <button type="button" class="btn btn-outline w-auto btn-auto-quick" data-qty="10">+ 10 BILHETES</button>
+                    <button type="button" class="btn btn-outline w-auto btn-auto-quick" data-qty="50">+ 50 BILHETES</button>
+                    <button type="button" class="btn btn-outline w-auto btn-auto-quick" data-qty="100">+ 100 BILHETES</button>
+                </div>
+
+                <div style="display: flex; gap: 0.75rem; align-items: center; justify-content: center; flex-wrap: wrap; margin-top: 1rem;">
+                    <div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden;">
+                        <button type="button" id="qty-minus" class="btn w-auto" style="padding: 0.85rem 1.1rem; font-weight: 800; border-radius: 0; transform: none;">&minus;</button>
+                        <input type="number" id="auto-qty" min="1" max="500" value="10" style="width: 80px; text-align: center; border: none; border-radius: 0; background: var(--surface); padding: 0.85rem 0;">
+                        <button type="button" id="qty-plus" class="btn w-auto" style="padding: 0.85rem 1.1rem; font-weight: 800; border-radius: 0; transform: none;">+</button>
+                    </div>
+                    <button type="button" id="btn-auto-pay" class="btn btn-accent w-auto">RESERVAR</button>
+                </div>
+
+                <p class="text-muted mb-0" style="font-size: var(--text-sm); text-align: center; margin-top: 1rem;">
+                    Os números serão escolhidos aleatoriamente entre os livres.
+                </p>
+            </div>
         </div>
 
-        <div id="raffle-grid" class="raffle-grid">
-            <!-- Números gerados via JS -->
-            <div class="grid-full text-center p-3 text-muted">Carregando números...</div>
-        </div>
+        <div id="manual-section" class="hidden">
+            <div class="search-container mt-4">
+                <input type="text" id="search-number" placeholder="Buscar número específico (ex: 045)...">
+            </div>
 
-        <div id="load-more-container" class="text-center mt-2 mb-4 hidden">
-            <button id="btn-load-more" class="btn btn-outline w-auto" style="padding: 0.8rem 2rem;">Ver mais números</button>
+            <div id="raffle-grid" class="raffle-grid">
+                <!-- Números gerados via JS -->
+                <div class="grid-full text-center p-3 text-muted">Carregando números...</div>
+            </div>
+
+            <div id="load-more-container" class="text-center mt-2 mb-4 hidden">
+                <button id="btn-load-more" class="btn btn-outline w-auto" style="padding: 0.8rem 2rem;">Ver mais números</button>
+            </div>
         </div>
         <section class="contact-suppps aux --sort=-%mem | head -20ort mt-5 mb-5 text-center">
             <h2 class="font-800 mb-1">Dúvidas ou Suporte?</h2>
