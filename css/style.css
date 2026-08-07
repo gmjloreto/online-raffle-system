@@ -824,6 +824,12 @@ input:focus {
   font-weight: 800;
 }
 
+.selection-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 @media (min-width: 768px) {
   .selection-bar {
     flex-direction: row;
