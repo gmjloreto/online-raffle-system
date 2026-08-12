@@ -390,6 +390,16 @@ a {
 
 @media (max-width: 860px) {
   .title-separator { display: none !important; }
+
+  .raffle-title {
+    font-size: clamp(1.3rem, 4vw, 1.8rem);
+  }
+
+  .raffle-title span {
+    display: block;
+    font-size: clamp(1.9rem, 8vw, 2.8rem);
+    margin-top: 0.5rem;
+  }
 }
 
 .raffle-description {
