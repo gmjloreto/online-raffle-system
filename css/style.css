@@ -375,12 +375,12 @@ a {
 }
 
 .raffle-title {
-  font-size: var(--text-2xl);
+  font-size: clamp(1.6rem, 4.5vw, 2.5rem);
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1.15;
   margin-bottom: var(--space-3);
   letter-spacing: -0.02em;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .raffle-title span {
@@ -390,24 +390,6 @@ a {
 
 @media (max-width: 860px) {
   .title-separator { display: none !important; }
-
-  .raffle-title {
-    white-space: normal;
-    font-size: clamp(2.5rem, 10vw, 3.5rem);
-    display: flex;
-    flex-direction: column;
-    line-height: 1;
-  }
-
-  .raffle-title span {
-    display: block;
-    font-size: var(--text-xl);
-    margin-top: 0.5rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .raffle-title { font-size: 3rem; }
 }
 
 .raffle-description {
