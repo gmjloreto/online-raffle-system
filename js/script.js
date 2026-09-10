@@ -457,7 +457,6 @@ async function initIndex() {
         const name = document.getElementById('customer-name').value.trim();
         const phone = document.getElementById('customer-phone').value.trim();
         const indication = document.getElementById('indication').value.trim();
-        const totalAmount = calculateTotal(selectedNumbers.length);
 
         if (selectedNumbers.length === 0) {
             showToast('Nenhum número selecionado.', 'error');
@@ -470,39 +469,36 @@ async function initIndex() {
         showToast('Salvando sua reserva...', 'loading');
 
         try {
-            // 1. Criar Reserva
-            const { data: resData, error: resError } = await supabase
-                .from('raffle_reservations')
-                .insert([{
-                    customer_name: name,
-                    customer_phone: phone,
-                    indication: indication || null,
-                    total_amount: totalAmount
-                }])
-                .select()
-                .single();
+            const { data, error } = await supabase.rpc('create_raffle_reservation', {
+                p_customer_name: name,
+                p_customer_phone: phone,
+                p_indication: indication,
+                p_numbers: selectedNumbers
+            });
 
-            if (resError) throw resError;
+            if (error) throw error;
 
-            // 2. Criar números vinculados
-            const numbersData = selectedNumbers.map(num => ({
-                reservation_id: resData.id,
-                number: num
-            }));
+            const result = data;
 
-            const { error: numError } = await supabase
-                .from('raffle_selected_numbers')
-                .insert(numbersData);
-
-            if (numError) {
-                // Se falhou ao inserir números, apaga a reserva órfã
-                await supabase.from('raffle_reservations').delete().eq('id', resData.id);
-                throw numError;
+            if (!result.success) {
+                if (result.error_type === 'numbers_unavailable') {
+                    const unavailable = result.unavailable_numbers || [];
+                    showToast(`${result.message} Tente selecionar outros.`, 'error');
+                    fetchOccupiedNumbers();
+                    selectedNumbers = selectedNumbers.filter(n => !unavailable.includes(n));
+                    updateSelectionUI();
+                    renderGrid();
+                } else {
+                    showToast(result.message, 'error');
+                }
+                finalConfirmBtn.disabled = false;
+                finalConfirmBtn.textContent = 'Finalizar';
+                return;
             }
 
             // Sucesso!
             localStorage.setItem('last_reserved_numbers', JSON.stringify(selectedNumbers));
-            localStorage.setItem('last_reserved_total', totalAmount);
+            localStorage.setItem('last_reserved_total', result.total_amount);
             
             showToast('Reserva realizada com sucesso!', 'success');
             
@@ -512,7 +508,7 @@ async function initIndex() {
 
         } catch (error) {
             console.error("Erro na reserva:", error);
-            showToast('Erro ao reservar. Verifique se os números ainda estão disponíveis.', 'error');
+            showToast('Erro ao processar reserva. Tente novamente.', 'error');
             
             fetchOccupiedNumbers(); 
             finalConfirmBtn.disabled = false;
