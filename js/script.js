@@ -469,27 +469,40 @@ async function initIndex() {
         showToast('Salvando sua reserva...', 'loading');
 
         try {
+            console.log('[DEBUG] selectedNumbers:', selectedNumbers);
+            
             const { data, error } = await supabase.rpc('create_raffle_reservation', {
                 p_customer_name: name,
                 p_customer_phone: phone,
-                p_indication: indication,
+                p_indication: indication || null,
                 p_numbers: selectedNumbers
             });
 
-            if (error) throw error;
+            console.log('[DEBUG] RPC response:', { data, error });
+
+            if (error) {
+                console.error('[DEBUG] RPC error:', error);
+                throw error;
+            }
 
             const result = data;
+            console.log('[DEBUG] result:', result);
 
-            if (!result.success) {
-                if (result.error_type === 'numbers_unavailable') {
+            if (!result || !result.success) {
+                const msg = result?.message || 'Erro desconhecido ao criar reserva.';
+                console.warn('[DEBUG] Reservation failed:', result);
+                
+                if (result?.error_type === 'numbers_unavailable') {
                     const unavailable = result.unavailable_numbers || [];
-                    showToast(`${result.message} Tente selecionar outros.`, 'error');
+                    showToast(`${msg} Tente selecionar outros.`, 'error');
                     fetchOccupiedNumbers();
                     selectedNumbers = selectedNumbers.filter(n => !unavailable.includes(n));
                     updateSelectionUI();
                     renderGrid();
+                } else if (result?.error_type === 'no_numbers') {
+                    showToast(msg, 'error');
                 } else {
-                    showToast(result.message, 'error');
+                    showToast(msg, 'error');
                 }
                 finalConfirmBtn.disabled = false;
                 finalConfirmBtn.textContent = 'Finalizar';
@@ -508,6 +521,14 @@ async function initIndex() {
 
         } catch (error) {
             console.error("Erro na reserva:", error);
+            
+            // Se erro de função não encontrada, tenta fallback antigo
+            if (error.message?.includes('function') || error.message?.includes('not found') || error.message?.includes('does not exist')) {
+                showToast('Sistema atualizando. Tentando método anterior...', 'info');
+                await fallbackCreateReservation(name, phone, indication);
+                return;
+            }
+            
             showToast('Erro ao processar reserva. Tente novamente.', 'error');
             
             fetchOccupiedNumbers(); 
@@ -516,6 +537,53 @@ async function initIndex() {
             confirmOrderModal.classList.remove('active');
         }
     };
+
+    // Fallback para método antigo (inserts diretos)
+    async function fallbackCreateReservation(name, phone, indication) {
+        const totalAmount = calculateTotal(selectedNumbers.length);
+        try {
+            const { data: resData, error: resError } = await supabase
+                .from('raffle_reservations')
+                .insert([{
+                    customer_name: name,
+                    customer_phone: phone,
+                    indication: indication || null,
+                    total_amount: totalAmount
+                }])
+                .select()
+                .single();
+
+            if (resError) throw resError;
+
+            const numbersData = selectedNumbers.map(num => ({
+                reservation_id: resData.id,
+                number: num
+            }));
+
+            const { error: numError } = await supabase
+                .from('raffle_selected_numbers')
+                .insert(numbersData);
+
+            if (numError) {
+                await supabase.from('raffle_reservations').delete().eq('id', resData.id);
+                throw numError;
+            }
+
+            localStorage.setItem('last_reserved_numbers', JSON.stringify(selectedNumbers));
+            localStorage.setItem('last_reserved_total', totalAmount);
+            showToast('Reserva realizada com sucesso!', 'success');
+            setTimeout(() => window.location.href = 'pagamento.html', 1000);
+
+        } catch (err) {
+            console.error("Fallback erro:", err);
+            showToast('Erro ao reservar. Verifique se os números ainda estão disponíveis.', 'error');
+            fetchOccupiedNumbers();
+        } finally {
+            finalConfirmBtn.disabled = false;
+            finalConfirmBtn.textContent = 'Finalizar';
+            confirmOrderModal.classList.remove('active');
+        }
+    }
 
     searchInput.oninput = () => renderGrid();
 
