@@ -109,19 +109,25 @@
                 </div>
             </div>
 
-            <!-- Charts Section -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr)); gap: 1.5rem;" class="mt-3">
-                <div class="form-card p-2">
-                    <h3 class="font-800 mb-15">Análise de Arrecadação</h3>
-                    <div class="chart-container">
-                        <canvas id="revenueChart"></canvas>
-                    </div>
+            <!-- Revenue Chart (top) -->
+            <div class="form-card p-2 mt-3">
+                <h3 class="font-800 mb-15">Análise de Arrecadação</h3>
+                <div class="chart-container">
+                    <canvas id="revenueChart"></canvas>
                 </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="charts-grid mt-3">
                 <div class="form-card p-2">
-                    <h3 class="font-800 mb-15">Ranking de Indicações</h3>
+                    <h3 class="font-800 mb-15">Quem Vendeu Mais Números (por Indicação)</h3>
                     <div class="chart-container">
                         <canvas id="indicationsChart"></canvas>
                     </div>
+                </div>
+                <div class="form-card p-2">
+                    <h3 class="font-800 mb-15">Quantidade de Números Vendidos (por Indicação)</h3>
+                    <div id="indications-details" class="indications-details"></div>
                 </div>
             </div>
 
