@@ -699,7 +699,6 @@ async function initAdmin() {
 
         const pending = data.filter(r => r.status === 'pending');
         const paid = data.filter(r => r.status === 'paid');
-        const allActive = data.filter(r => r.status !== 'cancelled');
 
         const totalRevenue = paid.reduce((acc, curr) => acc + parseFloat(curr.total_amount), 0);
         const soldNumbers = paid.reduce((acc, curr) => acc + (curr.raffle_selected_numbers ? curr.raffle_selected_numbers.length : 0), 0);
@@ -716,7 +715,7 @@ async function initAdmin() {
 
         renderLists();
         updateRevenueChart(paid);
-        updateIndicationsChart(allActive);
+        updateIndicationsChart(paid);
     }
 
     function matchesQuery(res, q) {
@@ -775,23 +774,54 @@ async function initAdmin() {
 
     function updateIndicationsChart(reservations) {
         const canvas = document.getElementById('indicationsChart');
+        const detailsEl = document.getElementById('indications-details');
         if (!canvas) return;
 
-        const counts = {};
+        const esc = (s) => String(s ?? '')
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        const brl = (n) => `R$ ${n.toFixed(2).replace('.', ',')}`;
+
+        // Agrupa por indicação: 1 por reserva (independente da qtd de números) + valor total
+        const byIndication = {};
         reservations.forEach(r => {
-            if (r.indication && r.indication.trim() !== "") {
-                const name = r.indication.trim();
-                counts[name] = (counts[name] || 0) + 1;
-            }
+            if (!r.indication || r.indication.trim() === '') return;
+            const name = r.indication.trim();
+            if (!byIndication[name]) byIndication[name] = { refs: 0, numbers: 0, total: 0 };
+            byIndication[name].refs += 1;
+            byIndication[name].numbers += (r.raffle_selected_numbers || []).length;
+            byIndication[name].total += parseFloat(r.total_amount) || 0;
         });
 
-        // Ordenar e pegar top 10
-        const sorted = Object.entries(counts)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 10);
+        const entries = Object.entries(byIndication).filter(([, v]) => v.refs > 0);
 
-        const labels = sorted.map(i => i[0]);
-        const values = sorted.map(i => i[1]);
+        // Gráfico: ranking por quantidade de indicações (top 10)
+        const top = [...entries]
+            .sort((a, b) => b[1].refs - a[1].refs)
+            .slice(0, 10);
+        const labels = top.map(([name]) => name);
+        const values = top.map(([, v]) => v.refs);
+
+        // Lista detalhada: ranking por quantidade de números vendidos
+        const sorted = [...entries].sort((a, b) => b[1].numbers - a[1].numbers);
+
+        // Lista detalhada: quantidade de números e valor total por indicação
+        if (detailsEl) {
+            if (sorted.length === 0) {
+                detailsEl.innerHTML = '<p class="text-muted">Nenhuma indicação com números vendidos.</p>';
+            } else {
+                detailsEl.innerHTML = sorted.map(([name, v], i) => `
+                    <div class="indications-details-item">
+                        <div class="indications-details-head">
+                            <span class="indications-details-rank">${i + 1}º</span>
+                            <span class="indications-details-name">${esc(name)}</span>
+                            <span class="indications-details-count">${v.numbers} número${v.numbers > 1 ? 's' : ''}</span>
+                            <span class="indications-details-total">${brl(v.total)}</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
 
         if (indicationsChart) indicationsChart.destroy();
         indicationsChart = new Chart(canvas, {
@@ -810,7 +840,15 @@ async function initAdmin() {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => {
+                                const v = top[ctx.dataIndex][1];
+                                return [` ${v.refs} indicação(ões)`, ` ${brl(v.total)}`];
+                            }
+                        }
+                    }
                 },
                 scales: {
                     x: {
@@ -830,45 +868,43 @@ async function initAdmin() {
         const canvas = document.getElementById('revenueChart');
         if (!canvas) return;
 
-        const dailyData = {};
-        const labels = [];
-        const values = [];
-
-        // 1. Determinar a data inicial (mínimo 7 dias atrás ou a data da primeira venda)
-        let startDate = new Date();
-        startDate.setDate(startDate.getDate() - 6);
-
+        // Agrupa por mês (AAAA-MM)
+        const monthly = {};
         paidItems.forEach(item => {
-            const itemDate = new Date(item.confirmed_at || item.updated_at);
-            if (itemDate < startDate) startDate = itemDate;
+            const d = new Date(item.confirmed_at || item.updated_at);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            monthly[key] = (monthly[key] || 0) + parseFloat(item.total_amount);
         });
 
-        // Resetar para o início do dia para comparação consistente
-        startDate.setHours(0, 0, 0, 0);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        // 2. Preencher o mapa com zeros e criar labels ordenados
-        let current = new Date(startDate);
-        while (current <= today) {
-            const dateStr = current.toLocaleDateString('pt-BR');
-            dailyData[dateStr] = 0;
-            labels.push(dateStr);
-            current.setDate(current.getDate() + 1);
+        // Do primeiro mês de venda até o mês atual (ou últimos 6 meses sem venda)
+        const now = new Date();
+        const keys = Object.keys(monthly).sort();
+        let start;
+        if (keys.length > 0) {
+            const [fy, fm] = keys[0].split('-').map(Number);
+            start = new Date(fy, fm - 1, 1);
+        } else {
+            start = new Date(now.getFullYear(), now.getMonth() - 5, 1);
         }
 
-        // 3. Somar os valores das vendas confirmadas
-        paidItems.forEach(item => {
-            const dateStr = new Date(item.confirmed_at || item.updated_at).toLocaleDateString('pt-BR');
-            if (dailyData[dateStr] !== undefined) {
-                dailyData[dateStr] += parseFloat(item.total_amount);
-            }
-        });
+        const labels = [];
+        const values = [];
+        const monthKeys = [];
+        let cur = new Date(start);
+        while (cur <= now) {
+            const key = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}`;
+            monthKeys.push(key);
+            labels.push(cur.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }).replace(/\./g, ''));
+            values.push(monthly[key] || 0);
+            cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+        }
 
-        // 4. Gerar os valores na ordem das labels
-        labels.forEach(label => {
-            values.push(dailyData[label]);
-        });
+        // Gradiente de preenchimento
+        const ctx = canvas.getContext('2d');
+        const gradHeight = (canvas.parentElement && canvas.parentElement.clientHeight) || 300;
+        const gradient = ctx.createLinearGradient(0, 0, 0, gradHeight);
+        gradient.addColorStop(0, 'rgba(10, 60, 167, 0.30)');
+        gradient.addColorStop(1, 'rgba(10, 60, 167, 0.02)');
 
         if (revenueChart) revenueChart.destroy();
         revenueChart = new Chart(canvas, {
@@ -876,27 +912,52 @@ async function initAdmin() {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Vendas (R$)',
+                    label: 'Arrecadado (R$)',
                     data: values,
                     borderColor: '#0a3ca7',
-                    backgroundColor: 'rgba(10, 60, 167, 0.1)',
+                    backgroundColor: gradient,
+                    borderWidth: 3,
                     tension: 0.4,
                     fill: true,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#0a3ca7'
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#0a3ca7',
+                    pointBorderWidth: 2,
+                    pointHoverBackgroundColor: '#0a3ca7'
                 }]
             },
-            options: { 
-                responsive: true, 
+            options: {
+                responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { 
-                    y: { 
+                interaction: { intersect: false, mode: 'index' },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0a3ca7',
+                        padding: 10,
+                        cornerRadius: 8,
+                        displayColors: false,
+                        callbacks: {
+                            title: (items) => {
+                                if (!items.length) return '';
+                                const [y, m] = monthKeys[items[0].dataIndex].split('-').map(Number);
+                                return new Date(y, m - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                            },
+                            label: (c) => ` R$ ${c.parsed.y.toFixed(2).replace('.', ',')}`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
                         beginAtZero: true,
-                        grid: { color: '#f4f4f5' }
+                        grid: { color: '#f4f4f5' },
+                        border: { display: false },
+                        ticks: { callback: (v) => `R$ ${v}` }
                     },
                     x: {
-                        grid: { display: false }
+                        grid: { display: false },
+                        border: { display: false }
                     }
                 }
             }
