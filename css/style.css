@@ -1345,5 +1345,61 @@ body.admin-dashboard .admin-item {
 }
 
 canvas { width: 100% !important; }
+
+/* Grid dos cards de gráficos */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 1.5rem;
+}
+
+/* Detalhes das indicações (gráfico admin) */
+.indications-details {
+  margin-top: var(--space-4);
+  height: clamp(250px, 35vh, 350px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.indications-details-item {
+  background: var(--gray-100);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+}
+
+.indications-details-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  flex-wrap: wrap;
+}
+
+.indications-details-rank {
+  font-weight: 800;
+  color: var(--accent);
+  min-width: 1.5rem;
+}
+
+.indications-details-name {
+  font-weight: 700;
+  flex: 1;
+  min-width: 80px;
+}
+
+.indications-details-count {
+  font-weight: 800;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.indications-details-total {
+  font-weight: 800;
+  color: var(--success);
+  white-space: nowrap;
+}
+
 .p-2 { padding: 1.5rem !important; }
 .p-3 { padding: var(--space-3) !important; }
