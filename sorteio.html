@@ -16,7 +16,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <link rel="stylesheet" href="css/style.css?v=2">
-    <link rel="stylesheet" href="css/sorteio.css">
+    <link rel="stylesheet" href="css/sorteio.css?v=5">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -165,12 +165,22 @@
         </div>
     </div>
 
+    <!-- Tela cheia de abertura do sorteio oficial -->
+    <div id="draw-intro-overlay" class="draw-intro-overlay hidden">
+        <div class="draw-intro-content">
+            <div class="draw-intro-trophy">🏆</div>
+            <div class="draw-intro-title">Sorteio Oficial</div>
+            <div id="draw-intro-subtitle" class="draw-intro-subtitle">Buscando participantes...</div>
+            <div id="draw-intro-stage" class="draw-intro-stage"></div>
+        </div>
+    </div>
+
     <div id="toast-container"></div>
 
     <script type="module">
         import { supabaseUrl, supabaseKey } from './config/config.js';
         console.log("Supabase Config Loaded:", supabaseUrl ? "URL OK" : "URL MISSING");
     </script>
-    <script type="module" src="js/sorteio.js?v=1"></script>
+    <script type="module" src="js/sorteio.js?v=4"></script>
 </body>
 </html>

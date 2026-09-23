@@ -2,6 +2,10 @@ import { supabaseUrl, supabaseKey } from '../config/config.js';
 
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+const TOTAL_PRIZES = 6;
+const PRIZE_EMOJIS = ['🥇', '🥈', '🥉', '🎁', '🎖️', '🏆'];
+const PRIZE_LABELS = ['1º Lugar', '2º Lugar', '3º Lugar', '4º Lugar', '5º Lugar', '6º Lugar'];
+
 // ----- UTILITIES -----
 
 function showToast(message, type = 'info') {
@@ -68,7 +72,7 @@ function generateWinners(participants) {
     const usedNames = new Set();
 
     for (const entry of pool) {
-        if (winners.length >= 4) break;
+        if (winners.length >= TOTAL_PRIZES) break;
         if (usedNumbers.has(entry.number)) continue;
         const nameKey = entry.customer_name.trim().toLowerCase();
         if (usedNames.has(nameKey)) continue;
@@ -89,8 +93,8 @@ function generateWinners(participants) {
 // ----- SLOT MACHINE ANIMATION -----
 
 function animateSlot(containerEl, participants, winner, position) {
-    const emojis = ['🥇', '🥈', '🥉', '🎁'];
-    const labels = ['1\u00ba Lugar', '2\u00ba Lugar', '3\u00ba Lugar', '4\u00ba Lugar'];
+    const emojis = PRIZE_EMOJIS;
+    const labels = PRIZE_LABELS;
 
     const item = document.createElement('div');
     item.className = 'prize-item';
@@ -144,6 +148,110 @@ function fireConfetti() {
     }
 }
 
+function burstConfetti(particleCount = 45) {
+    if (typeof confetti !== 'undefined') {
+        confetti({
+            particleCount: particleCount,
+            spread: 55,
+            startVelocity: 25,
+            scalar: 0.7,
+            origin: { y: 0.65 }
+        });
+    }
+}
+
+// ----- OFFICIAL REVEAL ANIMATION -----
+
+let drawIntroStartedAt = 0;
+
+function showDrawIntro() {
+    const overlay = document.getElementById('draw-intro-overlay');
+    const stage = document.getElementById('draw-intro-stage');
+    const subtitle = document.getElementById('draw-intro-subtitle');
+    if (!overlay) return;
+    if (stage) stage.innerHTML = '';
+    if (subtitle) subtitle.textContent = 'Buscando participantes...';
+    drawIntroStartedAt = Date.now();
+    overlay.classList.remove('hidden');
+}
+
+function hideDrawIntro() {
+    const overlay = document.getElementById('draw-intro-overlay');
+    if (overlay) overlay.classList.add('hidden');
+}
+
+function setDrawIntroPhase(text) {
+    const subtitle = document.getElementById('draw-intro-subtitle');
+    if (subtitle) subtitle.textContent = text;
+}
+
+function renderOfficialWinners(displayEl, winners) {
+    displayEl.classList.remove('hidden');
+    displayEl.innerHTML = '<div class="simulation-title" style="font-size: var(--text-base);">🏆 Vencedores Oficiais</div>';
+    winners.forEach((w, i) => {
+        const card = document.createElement('div');
+        card.className = 'official-winner-card revealed';
+        card.innerHTML = `
+            <div class="official-winner-emoji">${PRIZE_EMOJIS[i] || '🎫'}</div>
+            <div class="official-winner-info">
+                <div class="official-winner-position">${PRIZE_LABELS[i] || `${i + 1}º Lugar`}</div>
+                <div class="official-winner-number">${formatNumber(w.number)}</div>
+                <div class="official-winner-name">${shortenName(w.customer_name)}</div>
+            </div>
+        `;
+        displayEl.appendChild(card);
+    });
+}
+
+async function animateOfficialReveal(displayEl, winners, participants) {
+    displayEl.innerHTML = '';
+
+    for (let i = 0; i < winners.length; i++) {
+        const w = winners[i];
+        const card = document.createElement('div');
+        card.className = 'official-winner-card slot-animating';
+        card.innerHTML = `
+            <div class="official-winner-emoji">${PRIZE_EMOJIS[i] || '🎫'}</div>
+            <div class="official-winner-info">
+                <div class="official-winner-position">${PRIZE_LABELS[i] || `${i + 1}º Lugar`}</div>
+                <div class="official-winner-number">---</div>
+                <div class="official-winner-name">Sorteando...</div>
+            </div>
+        `;
+        displayEl.appendChild(card);
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        const numEl = card.querySelector('.official-winner-number');
+        const nameEl = card.querySelector('.official-winner-name');
+
+        // Flicker: gira números/nomes aleatórios como caça-níquel
+        const duration = 1600;
+        const start = Date.now();
+        await new Promise(resolve => {
+            function tick() {
+                if (Date.now() - start < duration) {
+                    const rand = participants[Math.floor(Math.random() * participants.length)];
+                    numEl.textContent = formatNumber(rand.number);
+                    nameEl.textContent = shortenName(rand.customer_name);
+                    setTimeout(tick, 60);
+                } else {
+                    resolve();
+                }
+            }
+            tick();
+        });
+
+        // Trava no vencedor real com pop + brilho
+        numEl.textContent = formatNumber(w.number);
+        nameEl.textContent = shortenName(w.customer_name);
+        card.classList.remove('slot-animating');
+        card.classList.add('revealed');
+        burstConfetti(45);
+
+        await new Promise(r => setTimeout(r, 450));
+    }
+}
+
 // ----- FETCH PARTICIPANTS -----
 
 async function fetchPaidParticipants() {
@@ -191,8 +299,8 @@ async function runSimulation() {
 
     const participants = await fetchPaidParticipants();
 
-    if (participants.length < 4) {
-        showToast('É necessário pelo menos 4 números pagos para simular.', 'error');
+    if (participants.length < TOTAL_PRIZES) {
+        showToast(`É necessário pelo menos ${TOTAL_PRIZES} números pagos para simular.`, 'error');
         btn.disabled = false;
         btn.textContent = 'Gerar Simulação';
         simulationInProgress = false;
@@ -201,8 +309,8 @@ async function runSimulation() {
 
     const winners = generateWinners(participants);
 
-    if (winners.length < 4) {
-        showToast('Não foi possível gerar 4 vencedores distintos.', 'error');
+    if (winners.length < TOTAL_PRIZES) {
+        showToast(`Não foi possível gerar ${TOTAL_PRIZES} vencedores distintos.`, 'error');
         btn.disabled = false;
         btn.textContent = 'Gerar Simulação';
         simulationInProgress = false;
@@ -264,12 +372,14 @@ async function confirmOfficialDraw() {
     btn.disabled = true;
     btn.textContent = 'Processando...';
     showToast('Realizando sorteio oficial...', 'loading');
+    showDrawIntro();
 
     let participants;
 
     try {
         participants = await fetchPaidParticipants();
     } catch (err) {
+        hideDrawIntro();
         showToast('Erro ao buscar participantes.', 'error');
         btn.disabled = false;
         btn.textContent = 'Realizar Sorteio Oficial';
@@ -277,8 +387,9 @@ async function confirmOfficialDraw() {
         return;
     }
 
-    if (participants.length < 4) {
-        showToast('É necessário pelo menos 4 números pagos.', 'error');
+    if (participants.length < TOTAL_PRIZES) {
+        hideDrawIntro();
+        showToast(`É necessário pelo menos ${TOTAL_PRIZES} números pagos.`, 'error');
         btn.disabled = false;
         btn.textContent = 'Realizar Sorteio Oficial';
         officialDrawInProgress = false;
@@ -287,8 +398,9 @@ async function confirmOfficialDraw() {
 
     const winners = generateWinners(participants);
 
-    if (winners.length < 4) {
-        showToast('Não foi possível gerar 4 vencedores distintos.', 'error');
+    if (winners.length < TOTAL_PRIZES) {
+        hideDrawIntro();
+        showToast(`Não foi possível gerar ${TOTAL_PRIZES} vencedores distintos.`, 'error');
         btn.disabled = false;
         btn.textContent = 'Realizar Sorteio Oficial';
         officialDrawInProgress = false;
@@ -303,16 +415,22 @@ async function confirmOfficialDraw() {
         customer_name: w.customer_name
     }));
 
+    let insertError = null;
+    let updateError = null;
+
     try {
         // Insert winners
-        const { error: insertError } = await supabase
+        const { error: insErr } = await supabase
             .from('raffle_winners')
             .insert(winnersData);
 
-        if (insertError) throw insertError;
+        if (insErr) {
+            insertError = insErr;
+            throw insErr;
+        }
 
         // Update raffle settings
-        const { error: updateError } = await supabase
+        const { error: updErr } = await supabase
             .from('raffle_settings')
             .update({
                 raffle_closed: true,
@@ -320,31 +438,48 @@ async function confirmOfficialDraw() {
             })
             .eq('id', 1);
 
-        if (updateError) {
+        if (updErr) {
+            updateError = updErr;
             // Rollback winners
-            await supabase.from('raffle_winners').delete().neq('id', 0);
-            throw updateError;
+            const { error: delError } = await supabase.from('raffle_winners').delete().neq('id', 0);
+            if (delError) console.error('Rollback falhou:', delError);
+            throw updErr;
+        }
+    } catch (err) {
+        hideDrawIntro();
+        console.error('Erro no sorteio oficial:', err);
+        const code = err && err.code ? ` [${err.code}]` : '';
+        if (insertError) {
+            showToast(`Erro ao gravar vencedores${code}: ${err.message}`, 'error');
+        } else if (updateError) {
+            showToast(`Vencedores gravados, mas falhou ao encerrar a rifa${code}: ${err.message}. Rollback executado.`, 'error');
+        } else {
+            showToast(`Erro no sorteio${code}: ${err.message}`, 'error');
+        }
+        btn.disabled = false;
+        btn.textContent = 'Realizar Sorteio Oficial';
+        officialDrawInProgress = false;
+        return;
+    }
+
+    try {
+        showToast('Sorteio gravado! Revelando vencedores...', 'success');
+        btn.textContent = 'Revelando...';
+
+        // Garante tempo mínimo da abertura antes de começar a revelar
+        const elapsed = Date.now() - drawIntroStartedAt;
+        if (elapsed < 1800) {
+            await new Promise(r => setTimeout(r, 1800 - elapsed));
         }
 
-        showToast('Sorteio oficial realizado com sucesso!', 'success');
+        setDrawIntroPhase('🎁 Revelando os prêmios...');
 
-        // Show winners in card
-        displayEl.classList.remove('hidden');
-        displayEl.innerHTML = '<div class="simulation-title" style="font-size: var(--text-base);">🏆 Vencedores Oficiais</div>';
-        const emojis = ['🥇', '🥈', '🥉', '🎁'];
-        winners.forEach((w, i) => {
-            const card = document.createElement('div');
-            card.className = 'official-winner-card';
-            card.innerHTML = `
-                <div class="official-winner-emoji">${emojis[i]}</div>
-                <div class="official-winner-info">
-                    <div class="official-winner-position">${i + 1}\u00ba Lugar</div>
-                    <div class="official-winner-number">${formatNumber(w.number)}</div>
-                    <div class="official-winner-name">${shortenName(w.customer_name)}</div>
-                </div>
-            `;
-            displayEl.appendChild(card);
-        });
+        // Revela um prêmio por vez dentro da tela de abertura (caça-níquel)
+        const stageEl = document.getElementById('draw-intro-stage');
+        await animateOfficialReveal(stageEl, winners, participants);
+
+        hideDrawIntro();
+        renderOfficialWinners(displayEl, winners);
 
         btn.textContent = 'Rifa Encerrada';
         btn.disabled = true;
@@ -353,12 +488,14 @@ async function confirmOfficialDraw() {
         checkDevMode();
 
         fireConfetti();
-
     } catch (err) {
-        console.error('Erro no sorteio oficial:', err);
-        showToast('Erro ao realizar sorteio. Nenhum dado foi gravado.', 'error');
-        btn.disabled = false;
-        btn.textContent = 'Realizar Sorteio Oficial';
+        hideDrawIntro();
+        console.error('Erro ao exibir vencedores (dados já gravados):', err);
+        showToast('Sorteio gravado, mas houve erro ao exibir. Recarregue a página.', 'error');
+        try { renderOfficialWinners(displayEl, winners); } catch (e) { /* ignorado */ }
+        btn.textContent = 'Rifa Encerrada';
+        btn.disabled = true;
+        checkDevMode();
     }
 
     officialDrawInProgress = false;
@@ -460,7 +597,7 @@ async function loadHistory() {
             return;
         }
 
-        const emojis = ['🥇', '🥈', '🥉', '🎁'];
+        const emojis = PRIZE_EMOJIS;
         container.innerHTML = '';
 
         data.forEach(w => {
@@ -591,7 +728,7 @@ async function initDashboard() {
                 const displayEl = document.getElementById('official-winners-display');
                 displayEl.classList.remove('hidden');
                 displayEl.innerHTML = '<div class="simulation-title" style="font-size: var(--text-base);">🏆 Vencedores Oficiais</div>';
-                const emojis = ['🥇', '🥈', '🥉', '🎁'];
+                const emojis = PRIZE_EMOJIS;
                 existingWinners.forEach((w, i) => {
                     const card = document.createElement('div');
                     card.className = 'official-winner-card';

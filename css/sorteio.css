@@ -141,6 +141,159 @@
   color: var(--text-muted);
 }
 
+/* ========= OFFICIAL REVEAL ANIMATION ========= */
+
+.official-reveal-title {
+  font-size: var(--text-lg);
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: var(--space-3);
+  background: linear-gradient(90deg, var(--accent), #d4a017, var(--accent));
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: revealTitleShine 2.5s linear infinite;
+}
+
+@keyframes revealTitleShine {
+  to { background-position: 200% center; }
+}
+
+.official-winner-card.slot-animating {
+  border-color: var(--accent);
+  animation: slotPulse 0.7s ease-in-out infinite alternate;
+}
+
+@keyframes slotPulse {
+  from { box-shadow: 0 0 0 1px var(--accent), 0 0 8px rgba(10, 60, 167, 0.12); }
+  to   { box-shadow: 0 0 0 1px var(--accent), 0 0 18px rgba(10, 60, 167, 0.35); }
+}
+
+.official-winner-card.slot-animating .official-winner-number {
+  display: inline-block;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.official-winner-card.revealed {
+  animation: cardReveal 0.55s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  border: 1px solid rgba(16, 185, 129, 0.75);
+  background:
+    linear-gradient(180deg, rgba(16, 185, 129, 0.18), rgba(16, 185, 129, 0.07)),
+    var(--surface-raised);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22), 0 6px 18px rgba(16, 185, 129, 0.28);
+}
+
+@keyframes cardReveal {
+  0%   { transform: scale(0.92) translateY(6px); opacity: 0.4; }
+  60%  { transform: scale(1.03) translateY(0); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.official-winner-card.revealed .official-winner-number {
+  display: inline-block;
+  color: #047857;
+  text-shadow: 0 0 12px rgba(16, 185, 129, 0.45);
+  animation: numberPop 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.4);
+}
+
+@keyframes numberPop {
+  0%   { transform: scale(0.6); }
+  60%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.official-winner-card.revealed .official-winner-emoji {
+  animation: emojiBounce 0.55s cubic-bezier(0.18, 0.89, 0.32, 1.4);
+}
+
+@keyframes emojiBounce {
+  0%   { transform: scale(0.5) rotate(-12deg); }
+  60%  { transform: scale(1.3) rotate(8deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+/* ========= DRAW INTRO OVERLAY (tela cheia) ========= */
+
+.draw-intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: radial-gradient(ellipse at center, rgba(13, 28, 60, 0.94), rgba(4, 8, 20, 0.97));
+  backdrop-filter: blur(6px);
+  overflow-y: auto;
+}
+
+.draw-intro-content {
+  text-align: center;
+  width: min(560px, 100%);
+  padding: var(--space-4) 0;
+}
+
+.draw-intro-trophy {
+  font-size: clamp(3rem, 12vw, 5rem);
+  line-height: 1;
+  filter: drop-shadow(0 0 24px rgba(212, 160, 23, 0.55));
+  animation: introTrophyDrop 0.9s cubic-bezier(0.18, 0.89, 0.32, 1.35) both;
+}
+
+@keyframes introTrophyDrop {
+  0%   { transform: translateY(-80px) scale(0.4); opacity: 0; }
+  60%  { transform: translateY(8px) scale(1.1); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.draw-intro-title {
+  margin-top: var(--space-3);
+  font-size: clamp(1.5rem, 6vw, 2.4rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  background: linear-gradient(90deg, #f6d365, #ffffff, #d4a017, #f6d365);
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: introTitleIn 0.7s 0.25s both, introTitleShine 3s linear 1s infinite;
+}
+
+@keyframes introTitleIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes introTitleShine {
+  to { background-position: 300% center; }
+}
+
+.draw-intro-subtitle {
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  color: rgba(255, 255, 255, 0.72);
+  animation: introSubtitlePulse 1.6s ease-in-out infinite;
+}
+
+@keyframes introSubtitlePulse {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+
+.draw-intro-stage {
+  margin-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  text-align: left;
+  max-height: 62vh;
+  overflow-y: auto;
+  padding: 2px;
+}
+
 /* ========= DEV WARNING ========= */
 
 .dev-warning {

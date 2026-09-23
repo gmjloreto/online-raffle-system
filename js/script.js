@@ -298,7 +298,7 @@ async function initIndex() {
             data.forEach(w => {
                 const card = document.createElement('div');
                 card.className = 'winner-card';
-                const emoji = ['🥇', '🥈', '🥉', '🎁'][w.position - 1] || '🎫';
+                const emoji = ['🥇', '🥈', '🥉', '🎁', '🎖️', '🏆'][w.position - 1] || '🎫';
                 card.innerHTML = `
                     <div class="winner-emoji">${emoji}</div>
                     <div class="winner-info">
